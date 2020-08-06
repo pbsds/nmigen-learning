@@ -2,6 +2,7 @@ import "/nmigen_boards.icebreaker/ICEBreakerPlatform"
 import "/nmigen_dg/*"
 import "modules/Blinker"
 import "modules/Pulser"
+import "resources/pmod"
 
 Top = subclass Elaboratable where
     elaborate = platform ~> m where with m = Module! =>
@@ -9,6 +10,7 @@ Top = subclass Elaboratable where
 
         @ledr = platform.request "led_r"
         @ledg = platform.request "led_g"
+        @seg7 = platform.request "seven_seg"
 
         blinker1 = Blinker$ int (freq // 3)
         m.submodules += blinker1
@@ -25,4 +27,5 @@ Top = subclass Elaboratable where
 
 if __name__ == "__main__" =>
     plat = ICEBreakerPlatform!
+    plat.add_resources$ pmod.seven_seg 0 # pmod 1a
     plat.build Top! do_program: True
