@@ -14,15 +14,12 @@ class Blinker(Elaboratable):
         counter = Signal(range(self.maxperiod + 1))
 
         with m.If(counter == 0):
-            m.d.sync += [
-                led.eq(~led),
-                counter.eq(self.maxperiod)
-            ]
+            m.d.sync += led.eq(~led)
+            m.d.sync += counter.eq(self.maxperiod)
         with m.Else():
             m.d.sync += counter.eq(counter - 1)
 
         return m
-
 
 if __name__ == "__main__":
     plat = ICEBreakerPlatform()

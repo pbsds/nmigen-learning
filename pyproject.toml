@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "fpga"
 version = "0.1.0"
-description = ""
+description = "playing around with nmigen"
 authors = ["Peder Bergebakken Sundt <pbsds@hotmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "~3.7"
 yowasp-nextpnr-ice40-all = "^0.0.post2658.dev17"
 nmigen-dg = {git = "https://github.com/pbsds/nmigen_dg"}
 nmigen = "^0.2"
