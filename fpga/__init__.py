@@ -1,17 +1,21 @@
+
 __version__ = '0.1.0'
 
-def load_env():
+# YOWASP:
+
+def populate_environ():
     import os, shutil
 
+    for env_name, program in [
+            ("YOSYS",         "yowasp-yosys"),
+            ("NEXTPNR_ICE40", "yowasp-nextpnr-ice40"),
+            ("NEXTPNR_ECP5",  "yowasp-nextpnr-ecp5"),
+        ]:
+        if shutil.which(program):
+            os.environ[env_name] = program
 
-    if shutil.which("yowasp-yosys"):
-        os.environ["NEXTPNR_ICE40"] = "yowasp-nextpnr-ice40"
+populate_environ()
+del populate_environ
 
-    if shutil.which("yowasp-nextpnr-ice40"):
-        os.environ["NEXTPNR_ICE40"] = "yowasp-nextpnr-ice40"
-
-    if shutil.which("yowasp-nextpnr-ecp5"):
-        os.environ["NEXTPNR_ECP5"]  = "yowasp-nextpnr-ecp5"
-
-load_env()
-del load_env
+# dogelang: Slow. Stupid. Absolutely adorable.
+import dg # install import hook
