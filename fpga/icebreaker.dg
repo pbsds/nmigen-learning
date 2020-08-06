@@ -12,16 +12,16 @@ Top = subclass Elaboratable where
         @ledg = platform.request "led_g"
         @seg7 = platform.request "seven_seg"
 
-        blinker1 = Blinker$ int (freq // 3)
-        m.submodules += blinker1
+        @blinker = Blinker$ freq // 3
+        m.submodules += @blinker
 
-        blinker2 = Pulser$ int (freq // 3)
-        m.submodules += blinker2
+        @pulser = Pulser$ freq // 3
+        m.submodules += @pulser
 
-        comb$ drive @ledr blinker1.out
+        sync$ drive @ledr @blinker.out
 
         hello = Signal 1 reset: 1
-        when blinker2.out $ ->
+        when @pulser.out $ ->
             sync$ drive hello ~hello
         sync$ drive @ledg hello
 
