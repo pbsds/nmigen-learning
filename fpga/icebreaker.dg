@@ -1,0 +1,28 @@
+import "/nmigen_boards.icebreaker/ICEBreakerPlatform"
+import "/nmigen_dg/*"
+import "modules/Blinker"
+import "modules/Pulser"
+
+Top = subclass Elaboratable where
+    elaborate = platform ~> m where with m = Module! =>
+        freq = int platform.default_clk_frequency
+
+        @ledr = platform.request "led_r"
+        @ledg = platform.request "led_g"
+
+        blinker1 = Blinker$ int (freq // 3)
+        m.submodules += blinker1
+
+        blinker2 = Pulser$ int (freq // 3)
+        m.submodules += blinker2
+
+        comb$ drive @ledr blinker1.out
+
+        hello = Signal 1 reset: 1
+        when blinker2.out $ ->
+            sync$ drive hello ~hello
+        sync$ drive @ledg hello
+
+if __name__ == "__main__" =>
+    plat = ICEBreakerPlatform!
+    plat.build Top! do_program: True

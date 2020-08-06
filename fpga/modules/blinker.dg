@@ -1,0 +1,29 @@
+import "/nmigen/cli/main"
+import "/nmigen_dg/*"
+
+Blinker = subclass Elaboratable where
+    __init__ = ncycles pulse: False ~> None where
+        @ncycles = ncycles
+        @pulse = pulse
+        @out = Signal!
+
+    elaborate = platform ~> m where with m = Module! =>
+        counter = Signal$ range (@ncycles + 1)
+
+        if @pulse =>
+            sync$ drive @out LOW
+
+        when
+            counter == 0 ,->
+                sync$ drive @out  (~ @out)
+                sync$ drive counter @ncycles
+            otherwise ,->
+                sync$ drive counter (counter - 1)
+
+
+Pulser = bind Blinker pulse: True
+
+
+if __name__ == "__main__" =>
+    blinker = Blinker ncycles: 10000000
+    main blinker ports: [blinker.out]
