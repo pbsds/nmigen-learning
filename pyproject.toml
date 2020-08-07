@@ -6,14 +6,22 @@ authors = ["Peder Bergebakken Sundt <pbsds@hotmail.com>"]
 
 [tool.poetry.dependencies]
 python = "~3.7"
-yowasp-nextpnr-ice40-all = "^0.0.post2658.dev17"
+nmigen = {git = "https://github.com/nmigen/nmigen"}
 nmigen-dg = {git = "https://github.com/pbsds/nmigen_dg"}
-nmigen = "^0.2"
 nmigen_boards = "^0.0"
+nmigen-yosys = {version = "^0.9.post4757.dev23", optional = true}
+yowasp-nextpnr-ecp5-all = {version = "^0.0.post2658.dev17", optional = true}
+yowasp-nextpnr-ice40-all = {version = "^0.0.post2658.dev17", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 
+[tool.poetry.extras]
+yosys = ["nmigen-yosys"]
+nextpnr-ecp5 = ["yowasp-nextpnr-ecp5-all"]
+nextpnr-ice40 = ["yowasp-nextpnr-ice40-all"]
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
