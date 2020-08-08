@@ -1,7 +1,7 @@
 import "/nmigen_boards.icebreaker/ICEBreakerPlatform"
 import "/nmigen_dg/*"
-import "modules/Blinker"
-import "modules/Pulser"
+import "modules/blinker/Blinker"
+import "modules/blinker/Pulser"
 import "resources/pmod"
 
 Top = subclass Elaboratable where
