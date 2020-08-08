@@ -27,5 +27,6 @@ Top = subclass Elaboratable where
 
 if __name__ == "__main__" =>
     plat = ICEBreakerPlatform!
-    plat.add_resources$ pmod.seven_seg 0 # pmod 1a
+    plat.add_resources$ pmod.seven_seg   pmod: 0 # pmod 1a
+    plat.add_resources$ pmod.dip_switch8 pmod: 1 # pmod 1b
     plat.build Top! do_program: True
