@@ -2,6 +2,7 @@ import "/nmigen_boards.icebreaker/ICEBreakerPlatform"
 import "/nmigen_dg/*"
 import "modules/blinker/Blinker"
 import "modules/pulser/Pulser"
+import "modules/segment7/Segment7"
 import "resources/pmod"
 
 Top = subclass Elaboratable where
@@ -12,18 +13,27 @@ Top = subclass Elaboratable where
         @ledg = platform.request "led_g"
         @seg7 = platform.request "seven_seg"
 
-        @blinker = Blinker$ freq // 3
-        m.submodules += @blinker
+        blinker = (Submodule$ Blinker$ freq // 3 ).out
+        pulser  = (Submodule$ Pulser$  freq // 10).out
+        seg7    = Submodule$ Segment7!
 
-        @pulser = Pulser$ freq // 3
-        m.submodules += @pulser
+        Comb$ Drive @ledr blinker
 
-        sync$ drive @ledr @blinker.out
+        ff = Signal 1 reset: 1
+        When pulser $ ->
+            Sync$ Drive ff ~ff
 
-        hello = Signal 1 reset: 1
-        when @pulser.out $ ->
-            sync$ drive hello ~hello
-        sync$ drive @ledg hello
+        Comb$ Drive @ledg ff
+
+        counter = Signal 8
+        Comb$ Drive seg7.number counter
+        Comb$ Drive @seg7 seg7.pmod
+
+        When pulser $ ->
+            Sync$ Drive ff ~ff
+            Sync$ Drive counter (counter + 1)
+
+
 
 if __name__ == "__main__" =>
     plat = ICEBreakerPlatform!
