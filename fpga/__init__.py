@@ -7,6 +7,7 @@ def populate_environ():
     import os, shutil
 
     for nmigen_envvar, expected_path, alternative_path in [
+            ("SBY",           "sby",           "yowasp-sby"),
             ("YOSYS",         "yosys",         "yowasp-yosys"), # nmigen-yosys is handled by nmigen
             ("NEXTPNR_ICE40", "nextpnr-ice40", "yowasp-nextpnr-ice40"),
             ("NEXTPNR_ECP5",  "nextpnr-ecp5",  "yowasp-nextpnr-ecp5"),
