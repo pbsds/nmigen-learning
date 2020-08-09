@@ -1,0 +1,59 @@
+#!/usr/bin/env -S python3 -m dg
+import "/nmigen_dg/*"
+import "/nmigen/cli/main"
+
+# iCEBreaker 7-Segment Pmod
+
+Segment7 = subclass Elaboratable where
+    __init__ = output_hex: True ~> None where
+        @number = Signal 8 # i
+        @pmod   = Signal 8 # o
+        @format_hex = output_hex
+
+    elaborate = platform ~> m where with m = Module! =>
+        select = Signal!
+        Sync$ Drive select ~select
+
+        s1 = Submodule$ Digit2Segs!
+        s2 = Submodule$ Digit2Segs!
+
+        if @format_hex =>
+            Comb$ Drive s1.digit $ @number >> 4
+            Comb$ Drive s2.digit $ @number & 0x0f
+        if not @format_hex =>
+            Comb$ Drive s1.digit $ @number // 10
+            Comb$ Drive s2.digit $ @number & 10
+
+        Comb$ Drive @pmod $ Cat
+            Mux select s1.segs s2.segs
+            select
+
+
+Digit2Segs = subclass Elaboratable where
+    __init__ = self -> None where
+        @digit = Signal 4
+        @segs  = Signal 7
+
+    elaborate = platform ~> m where with m = Module! =>
+        Switch self.digit
+            0x0 ,-> Comb$ Drive @segs 0b0111111
+            0x1 ,-> Comb$ Drive @segs 0b0000110
+            0x2 ,-> Comb$ Drive @segs 0b1011011
+            0x3 ,-> Comb$ Drive @segs 0b1001111
+            0x4 ,-> Comb$ Drive @segs 0b1100110
+            0x5 ,-> Comb$ Drive @segs 0b1101101
+            0x6 ,-> Comb$ Drive @segs 0b1111101
+            0x7 ,-> Comb$ Drive @segs 0b0000111
+            0x8 ,-> Comb$ Drive @segs 0b1111111
+            0x9 ,-> Comb$ Drive @segs 0b1101111
+            0xa ,-> Comb$ Drive @segs 0b1110111
+            0xb ,-> Comb$ Drive @segs 0b1111100
+            0xc ,-> Comb$ Drive @segs 0b0111001
+            0xd ,-> Comb$ Drive @segs 0b1011110
+            0xe ,-> Comb$ Drive @segs 0b1111001
+            0xf ,-> Comb$ Drive @segs 0b1110001
+
+
+if __name__ == "__main__" =>
+    design = Seg7!
+    main design ports: [design.pmod]
