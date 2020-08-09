@@ -4,38 +4,39 @@ import "/nmigen/cli/main"
 
 # iCEBreaker 7-Segment Pmod
 
-Segment7 = subclass Elaboratable where
-    __init__ = output_hex: True ~> None where
+Segment7x2 = subclass Elaboratable where
+    __init__ = decimal: True ~> None where
         @number = Signal 8 # i
-        @pmod   = Signal 8 # o
-        @format_hex = output_hex
+        @segs   = Signal 7 # o
+        @select = Signal 1 # o
+        @decimal = decimal
 
     elaborate = platform ~> m where with m = Module! =>
         select = Signal!
         Sync$ Drive select ~select
 
-        s1 = Submodule$ Digit2Segs!
-        s2 = Submodule$ Digit2Segs!
+        seg7 = Submodule$ Segment7!
 
-        if @format_hex =>
-            Comb$ Drive s1.digit $ @number >> 4
-            Comb$ Drive s2.digit $ @number & 0x0f
-        if not @format_hex =>
-            Comb$ Drive s1.digit $ @number // 10
-            Comb$ Drive s2.digit $ @number & 10
+        if not @decimal =>
+            Comb$ Drive seg7.number $ Mux select
+                @number >> 4
+                @number & 0x0f
+        if @decimal =>
+            Comb$ Drive seg7.number $ Mux select
+                @number // 10
+                @number % 10
 
-        Comb$ Drive @pmod $ Cat
-            Mux select s1.segs s2.segs
-            select
+        Comb$ Drive @segs   seg7.segs
+        Comb$ Drive @select select
 
 
-Digit2Segs = subclass Elaboratable where
+Segment7 = subclass Elaboratable where
     __init__ = self -> None where
-        @digit = Signal 4
-        @segs  = Signal 7
+        @number = Signal 4 # i
+        @segs   = Signal 7 # o
 
     elaborate = platform ~> m where with m = Module! =>
-        Switch self.digit
+        Switch @number
             0x0 ,-> Comb$ Drive @segs 0b0111111
             0x1 ,-> Comb$ Drive @segs 0b0000110
             0x2 ,-> Comb$ Drive @segs 0b1011011
@@ -55,5 +56,5 @@ Digit2Segs = subclass Elaboratable where
 
 
 if __name__ == "__main__" =>
-    design = Seg7!
-    main design ports: [design.pmod]
+    design = Segment7x2!
+    main design ports: [design.number, design.segs, design.select]
