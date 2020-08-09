@@ -42,7 +42,6 @@ version = "1.1.0+git"
 reference = "c5edc568997a3aefd910d4ca32b05623223f83c8"
 type = "git"
 url = "https://github.com/pbsds/dg"
-
 [[package]]
 category = "main"
 description = "Read metadata from Python packages"
@@ -133,7 +132,6 @@ builtin-yosys = ["nmigen-yosys (>=0.9)"]
 reference = "d964ba9cc45490b141c8c4c4c3d8add1a26a739d"
 type = "git"
 url = "https://github.com/nmigen/nmigen"
-
 [[package]]
 category = "main"
 description = "Board and connector definitions for nMigen"
@@ -152,17 +150,16 @@ description = ""
 name = "nmigen-dg"
 optional = false
 python-versions = "^3.7"
-version = "0.1.0"
+version = "0.2.0"
 
 [package.dependencies]
 dg = "rev poetry"
 nmigen = "branch master"
 
 [package.source]
-reference = "b6a863c139c33473a498e5f2b4c2f09ee39351fe"
+reference = "f8acf31a9c43345bfc78cdd05804b3ea0828f099"
 type = "git"
 url = "https://github.com/pbsds/nmigen_dg"
-
 [[package]]
 category = "main"
 description = "Specialized WebAssembly build of Yosys used by nMigen"
@@ -439,10 +436,12 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [extras]
+nextpnr-ecp5 = ["yowasp-nextpnr-ecp5-all"]
 nextpnr-ice40 = ["yowasp-nextpnr-ice40-all"]
+yosys = ["nmigen-yosys"]
 
 [metadata]
-content-hash = "554eaebd97446aebe9832d7d701c67a0929b469cbc573d8545bd0ae26bed40df"
+content-hash = "06f48c2528cfb9782e6c9a98bd528b43957258cedc12b41c7b16bfb437dbfc97"
 python-versions = "~3.7"
 
 [metadata.files]
