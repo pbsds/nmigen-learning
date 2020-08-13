@@ -9,8 +9,8 @@ Top = subclass Elaboratable where
     elaborate = platform ~> m where with m = Module! =>
         freq = int platform.default_clk_frequency
 
-        @ledr = platform.request "led_r"
-        @ledg = platform.request "led_g"
+        @ledr = platform.request "led_r" 0
+        @ledg = platform.request "led_g" 0
         @seg7 = platform.request "seven_seg"
 
         blinker = (Submodule$ Blinker$ freq // 3 ).out
@@ -31,6 +31,33 @@ Top = subclass Elaboratable where
 
         Comb$ Drive seg7.number counter
         Comb$ Drive @seg7 (Cat seg7.segs seg7.select)
+
+
+        @ledr = Cat
+            platform.request "led_g" 4
+            platform.request "led_g" 2
+            platform.request "led_g" 3
+            platform.request "led_g" 1
+        @ledm  = platform.request "led_r" 1
+        @btn_r = platform.request "button" 1
+        @btn_m = platform.request "button" 2
+        @btn_l = platform.request "button" 3
+
+        state = Signal 4 reset: 0b1000
+        Comb$ Drive @ledr state
+        Comb$ Drive @ledm (@btn_r | @btn_l)
+
+        When (on_rising_edge @btn_l) $ ->
+            Sync$ Drive state (state.rotate_left 1)
+        When (on_rising_edge @btn_r) $ ->
+            Sync$ Drive state (state.rotate_right 1)
+        When (on_rising_edge @btn_m) $ ->
+            Sync$ Drive state ~state
+
+    on_rising_edge = signal ->
+        prev = Signal (signal.shape!)
+        Sync$ Drive prev signal
+        ~ signal.implies prev
 
 
 if __name__ == "__main__" =>
