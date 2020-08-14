@@ -111,7 +111,7 @@ description = "Python toolbox for building complex digital hardware"
 name = "nmigen"
 optional = false
 python-versions = "~=3.6"
-version = "0.3.dev152+gd964ba9"
+version = "0.3.dev154+gf6f9d68"
 
 [package.dependencies]
 Jinja2 = ">=2.11,<3.0"
@@ -129,7 +129,7 @@ version = "*"
 builtin-yosys = ["nmigen-yosys (>=0.9)"]
 
 [package.source]
-reference = "d964ba9cc45490b141c8c4c4c3d8add1a26a739d"
+reference = "f6f9d68f24ee19b52f115dd6b8012b5f395d537f"
 type = "git"
 url = "https://github.com/nmigen/nmigen"
 [[package]]
@@ -150,14 +150,14 @@ description = ""
 name = "nmigen-dg"
 optional = false
 python-versions = "^3.7"
-version = "0.2.0"
+version = "0.3.0"
 
 [package.dependencies]
 dg = "rev poetry"
 nmigen = "branch master"
 
 [package.source]
-reference = "f8acf31a9c43345bfc78cdd05804b3ea0828f099"
+reference = "bfe333b1a2f18fd12f1e688c9d934529817f7d0e"
 type = "git"
 url = "https://github.com/pbsds/nmigen_dg"
 [[package]]
