@@ -11,10 +11,10 @@ def pmod(func):
 
 # Icebreaker PMODs
 
-Attrs(IO_STANDARD="SB_LVCMOS33")
+#subsignal_args = [Attrs(IO_STANDARD="SB_LVCMOS33")]
 
 @pmod
-def seven_seg(*, pmod, name = "__name__", number = 0, index = 0, subsignal_args=(), extras={}):
+def seven_seg(number, *, pmod, name = __name__, subsignal_args=(), extras={}):
     return [Resource(name, number,
          Subsignal("aa", PinsN( "1", dir="o", conn=("pmod", pmod)), *subsignal_args),
          Subsignal("ab", PinsN( "2", dir="o", conn=("pmod", pmod)), *subsignal_args),
@@ -27,8 +27,9 @@ def seven_seg(*, pmod, name = "__name__", number = 0, index = 0, subsignal_args=
          **extras,
      )]
 
+
 @pmod
-def dip_switch8(*, pmod, name = "__name__", number = 0, index = 0, subsignal_args=(), extras={}):
+def dip_switch8(number, *, pmod, name = __name__, subsignal_args=(), extras={}):
     return [Resource(name, number,
          Subsignal("d1", PinsN( "1", dir="i", conn=("pmod", pmod)), *subsignal_args),
          Subsignal("d2", PinsN( "2", dir="i", conn=("pmod", pmod)), *subsignal_args),

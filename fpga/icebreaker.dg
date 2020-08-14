@@ -13,9 +13,9 @@ Top = subclass Elaboratable where
         @ledg = platform.request "led_g" 0
         @seg7 = platform.request "seven_seg"
 
-        blinker = (Submodule$ Blinker$ freq // 3 ).out
-        pulser  = (Submodule$ Pulser$  freq // 10).out
-        seg7    = Submodule$ Segment7x2 decimal: True
+        blinker = (Submodule.blinker$ Blinker$ freq // 3 ).out
+        pulser  = (Submodule.pulser $ Pulser$  freq // 2).out
+        seg7    = Submodule.seg7$ Segment7x2 decimal: False
 
         Comb$ Drive @ledr blinker
 
@@ -25,15 +25,27 @@ Top = subclass Elaboratable where
 
         Comb$ Drive @ledg ff
 
-        counter = Signal 8
+        counter = Signal 4
         When pulser $ ->
             Sync$ Drive counter (counter + 1)
 
-        Comb$ Drive seg7.number counter
+        # TODO: learn SPI FLASH
+        mem = Memory
+            width: 8
+            depth: 16 # ew
+            init: ([0xde, 0xad, 0xbe, 0xef]*4)
+        rdport = Submodule.rdport$ mem.read_port!
+        Comb$ Drive rdport.addr counter
+
+
+
+        Comb$ Drive seg7.number rdport.data
+        #Comb$ Drive seg7.number counter
         Comb$ Drive @seg7 (Cat seg7.segs seg7.select)
 
 
-        @ledr = Cat
+
+        @leds = Cat
             platform.request "led_g" 4
             platform.request "led_g" 2
             platform.request "led_g" 3
@@ -44,7 +56,7 @@ Top = subclass Elaboratable where
         @btn_l = platform.request "button" 3
 
         state = Signal 4 reset: 0b1000
-        Comb$ Drive @ledr state
+        Comb$ Drive @leds state
         Comb$ Drive @ledm (@btn_r | @btn_l)
 
         When (on_rising_edge @btn_l) $ ->
@@ -54,14 +66,16 @@ Top = subclass Elaboratable where
         When (on_rising_edge @btn_m) $ ->
             Sync$ Drive state ~state
 
-    on_rising_edge = signal ->
-        prev = Signal (signal.shape!)
-        Sync$ Drive prev signal
-        ~ signal.implies prev
+
+on_rising_edge = signal ->
+    prev = Signal (signal.shape!)
+    Sync$ Drive prev signal
+    ~ signal.implies prev
 
 
 if __name__ == "__main__" =>
     plat = ICEBreakerPlatform!
-    plat.add_resources$ pmod.seven_seg   pmod: 0 # pmod 1a
-    plat.add_resources$ pmod.dip_switch8 pmod: 1 # pmod 1b
-    plat.build Top! do_program: True
+    plat.add_resources$ pmod.seven_seg   0 pmod: 0 # pmod 1a
+    plat.add_resources$ pmod.dip_switch8 0 pmod: 1 # pmod 1b
+    plat.add_resources$ plat.break_off_pmod
+    plat.build Top! do_program: ("--flash" in sys.argv)
