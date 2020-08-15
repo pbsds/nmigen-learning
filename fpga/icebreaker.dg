@@ -1,5 +1,6 @@
 import "/nmigen_boards.icebreaker/ICEBreakerPlatform"
 import "/nmigen_dg/*"
+import "/sys"
 import "modules/blinker/Blinker"
 import "modules/pulser/Pulser"
 import "modules/segment7/Segment7x2"
@@ -67,10 +68,10 @@ Top = subclass Elaboratable where
             Sync$ state :== ~state
 
 
-on_rising_edge = signal ->
+on_rising_edge = signal -> result where
     prev = Signal (signal.shape!)
     Sync$ prev :== signal
-    ~ signal.implies prev
+    result = ~ signal.implies prev
 
 
 if __name__ == "__main__" =>
