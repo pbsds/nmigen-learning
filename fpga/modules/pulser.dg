@@ -7,14 +7,14 @@ Pulser = subclass Elaboratable where
         @out = Signal!
 
     elaborate = platform ~> m where with m = Module! =>
-        Sync$ Drive @out LOW
+        Sync$ @out :== 0
 
         counter = Signal$ range (@ncycles + 1)
-        Sync$ Drive counter (counter - 1)
+        Sync$ counter :== counter - 1
 
         When (counter == 0) $ ->
-            Sync$ Drive @out HIGH
-            Sync$ Drive counter @ncycles
+            Sync$ @out    :== HIGH
+            Sync$ counter :== @ncycles
 
 if __name__ == "__main__" =>
     pulser = Pulser ncycles: 10000000

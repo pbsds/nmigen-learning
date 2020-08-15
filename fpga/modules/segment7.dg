@@ -13,21 +13,20 @@ Segment7x2 = subclass Elaboratable where
 
     elaborate = platform ~> m where with m = Module! =>
         select = Signal!
-        Sync$ Drive select ~select
+        Sync$ select :== ~select
 
         seg7 = Submodule$ Segment7!
 
-        if not @decimal =>
-            Comb$ Drive seg7.number $ Mux select
-                @number >> 4
-                @number & 0x0f
-        if @decimal =>
-            Comb$ Drive seg7.number $ Mux select
+        Comb$ seg7.number :== if
+            @decimal => Mux select
                 @number // 10
                 @number % 10
+            otherwise => Mux select
+                @number >> 4
+                @number & 0x0f
 
-        Comb$ Drive @segs   seg7.segs
-        Comb$ Drive @select select
+        Comb$ @segs   :== seg7.segs
+        Comb$ @select :== select
 
 
 Segment7 = subclass Elaboratable where
@@ -37,22 +36,22 @@ Segment7 = subclass Elaboratable where
 
     elaborate = platform ~> m where with m = Module! =>
         Switch @number
-            0x0 ,-> Comb$ Drive @segs 0b0111111
-            0x1 ,-> Comb$ Drive @segs 0b0000110
-            0x2 ,-> Comb$ Drive @segs 0b1011011
-            0x3 ,-> Comb$ Drive @segs 0b1001111
-            0x4 ,-> Comb$ Drive @segs 0b1100110
-            0x5 ,-> Comb$ Drive @segs 0b1101101
-            0x6 ,-> Comb$ Drive @segs 0b1111101
-            0x7 ,-> Comb$ Drive @segs 0b0000111
-            0x8 ,-> Comb$ Drive @segs 0b1111111
-            0x9 ,-> Comb$ Drive @segs 0b1101111
-            0xa ,-> Comb$ Drive @segs 0b1110111
-            0xb ,-> Comb$ Drive @segs 0b1111100
-            0xc ,-> Comb$ Drive @segs 0b0111001
-            0xd ,-> Comb$ Drive @segs 0b1011110
-            0xe ,-> Comb$ Drive @segs 0b1111001
-            0xf ,-> Comb$ Drive @segs 0b1110001
+            0x0 ,-> Comb$ @segs :== 0b0111111
+            0x1 ,-> Comb$ @segs :== 0b0000110
+            0x2 ,-> Comb$ @segs :== 0b1011011
+            0x3 ,-> Comb$ @segs :== 0b1001111
+            0x4 ,-> Comb$ @segs :== 0b1100110
+            0x5 ,-> Comb$ @segs :== 0b1101101
+            0x6 ,-> Comb$ @segs :== 0b1111101
+            0x7 ,-> Comb$ @segs :== 0b0000111
+            0x8 ,-> Comb$ @segs :== 0b1111111
+            0x9 ,-> Comb$ @segs :== 0b1101111
+            0xa ,-> Comb$ @segs :== 0b1110111
+            0xb ,-> Comb$ @segs :== 0b1111100
+            0xc ,-> Comb$ @segs :== 0b0111001
+            0xd ,-> Comb$ @segs :== 0b1011110
+            0xe ,-> Comb$ @segs :== 0b1111001
+            0xf ,-> Comb$ @segs :== 0b1110001
 
 
 if __name__ == "__main__" =>
