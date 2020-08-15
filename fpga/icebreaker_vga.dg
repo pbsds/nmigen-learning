@@ -1,0 +1,51 @@
+import "/nmigen/lib/cdc/ResetSynchronizer"
+import "/nmigen_boards.icebreaker/ICEBreakerPlatform"
+import "/nmigen_dg/*"
+import "/sys"
+import "resources/pmod"
+
+
+Top = subclass Elaboratable where
+    elaborate = platform ~> m where with m = Module! =>
+        reset = if
+            platform.default_rst  => platform.request platform.default_rst
+            otherwise             => Const 0
+
+        # setup clock
+
+        clk40    = Signal!
+        pll_lock = Signal!
+
+        Submodule.pll$ Instance "SB_PLL40_PAD" # "SB_PLL40_CORE"
+            i_PACKAGEPIN    : (platform.request "clk12" dir:"-") # i_REFERENCECLK
+            i_BYPASS        : (Const 0)
+            i_RESETB        : ~reset
+            o_LOCK          : pll_lock
+            o_PLLOUTGLOBAL  : clk40
+            # icepll -o 40
+            p_FEEDBACK_PATH : "SIMPLE"
+            p_FILTER_RANGE  : 1
+            p_DIVR          : 0
+            p_DIVF          : 52
+            p_DIVQ          : 4
+
+        #m.domains.sync = ClockDomain "sync"
+        Domains.sync = ClockDomain "sync"
+        Comb$ ClockSignal "sync" :== clk40
+        Submodule$ ResetSynchronizer ~pll_lock domain: "sync"
+
+        state   = Signal!
+        counter = Signal$ range (int plat.default_clk_frequency)
+        Sync$ counter :== counter - 1
+        When (counter==0) $ ->
+            Sync$ counter :== (int plat.default_clk_frequency)
+            Sync$ state   :== ~state
+        Comb$ platform.request "led_r" :==  state # blinks at 1hz with default clk, but way faster when at 40MHz
+        Comb$ platform.request "led_g" :== ~state # blinks at 1hz with default clk, but way faster when at 40MHz
+
+
+if __name__ == "__main__" =>
+    plat = ICEBreakerPlatform!
+    plat.add_resources$ pmod.dvi_12bit 0
+    plat.add_resources$ plat.break_off_pmod
+    plat.build Top! do_program: ("--flash" in sys.argv)
