@@ -1,0 +1,185 @@
+#!/usr/bin/env -S python3 -m dg
+import "/nmigen/cli/main"
+import "/nmigen_boards.icebreaker/ICEBreakerPlatform"
+import "/nmigen_dg/*"
+import "/subprocess"
+import "/warnings/warn"
+import "../common/pipeline"
+import "../resources/pmod"
+
+# total_x  = front_x + sync_x + back_x + active_x
+# total_y  = front_y + sync_y + back_y + active_x
+# pix_freq = total_x * total_y * fps
+VGA_TIMINGS = dict' # VGA, SVGA, VESA
+    #(active_x, active_y, fps), (front_x, sync_x, back_x, front_y, sync_y, back_y)
+    (      640,      480,  60), (     16,     96,     48,      11,      2,     31) # Martin Hinner
+    (      640,      480,  72), (     24,     40,    128,       9,      3,     28) # Martin Hinner
+    (      640,      480,  75), (     16,     96,     48,      11,      2,     32) # Martin Hinner
+    (      640,      480,  85), (     32,     48,    112,       1,      3,     25) # Martin Hinner
+    (      640,     1024,  60), (     24,     56,    124,       1,      3,     38) # Kevin M. Hubbard
+    (      800,      480,  45), (    127,    128,     88,     127,    128,     32) # Kevin M. Hubbard (odd)
+    (      800,      600,  56), (     32,    128,    128,       1,      4,     14) # Martin Hinner
+    (      800,      600,  60), (     40,    128,     88,       1,      4,     23) # Kevin M. Hubbard
+    (      800,      600,  60), (     40,    128,     88,       1,      4,     23) # Martin Hinner
+    (      800,      600,  72), (     56,    120,     64,      37,      6,     23) # Martin Hinner
+    (      800,      600,  75), (     16,     80,    160,       1,      2,     21) # Martin Hinner
+    (      800,      600,  85), (     32,     64,    152,       1,      3,     27) # Martin Hinner
+    (     1024,      768,  60), (     24,    136,    160,       3,      6,     29) # Kevin M. Hubbard
+    (     1024,      768,  60), (     24,    136,    160,       3,      6,     29) # Martin Hinner
+    (     1024,      768,  70), (     24,    136,    144,       3,      6,     29) # Martin Hinner
+    (     1024,      768,  75), (     16,     96,    176,       1,      3,     28) # Martin Hinner
+    (     1024,      768,  85), (     48,     96,    208,       1,      3,     36) # Martin Hinner
+    (     1280,     1024,  60), (     48,    112,    248,       1,      3,     38) # Kevin M. Hubbard
+
+# https://projectf.io/posts/video-timings-vga-720p-1080p/
+# https://github.com/icebreaker-fpga/icebreaker-examples/blob/master/dvi-12bit/vga_timing.v
+# https://reference.digilentinc.com/learn/programmable-logic/tutorials/vga-display-congroller/start
+# http://tinyvga.com/vga-timing
+# http://martin.hinner.info/vga/timing.html
+
+
+# https://linux.die.net/man/1/gtf
+run_gtf = x y fps ->
+    out = subprocess.run ["gtf", str x, str y, str fps, "-x"]
+        capture_output: True
+        check: True
+
+    hr, hss, hse, hfl, vr, vss, vse, vfl = pipeline out.stdout
+        bytes.decode
+        str.splitlines
+        bind map str.strip
+        bind filter $ x -> x.startswith "Modeline"
+        head
+        str.split
+        bind drop 3
+        bind take 8
+        bind map int
+
+    #     <--------1--------> <--2--> <--3--> <--4-->
+    #                                _________
+    #    |-------------------|_______|       |_______
+    #
+    #                        R       SS      SE     FL
+    # 1:  visible image
+    # 2:  blank before sync (aka front porch)
+    # 3:  sync pulse
+    # 4:  blank after sync  (aka back porch)
+    # R:  Resolution
+    # SS: Sync Start
+    # SE: Sync End
+    # FL: Frame Length
+
+    #total_x, active_x, front_x, sync_x, back_x = hfl, hr, hss-hr, hse-hss, hfl-hse
+    #total_y, active_y, front_y, sync_y, back_y = vfl, vr, vss-vr, vse-vss, vfl-vse
+    #print hr hss hse hfl
+    #print vr vss vse vfl
+    #print active_x front_x sync_x back_x total_x sep:"\t"
+    #print active_y front_y sync_y back_y total_x sep:"\t"
+    #return (front_x, sync_x, back_x, front_y, sync_y, back_y)
+
+    hss-hr, hse-hss, hfl-hse, vss-vr, vse-vss, vfl-vse
+
+
+
+
+VgaController = subclass Elaboratable where
+    __init__ = x y fps bitwidth resource_name resource_number: 0 ~> None where
+        # params
+        @resource = (resource_name, resource_number)
+        @active_x, @active_y = x, y
+
+        # out
+        @pixel_x = Signal$ range @active_x
+        @pixel_y = Signal$ range @active_y
+        @active  = Signal!
+
+        # in
+        @r = Signal$ bitwidth
+        @g = Signal$ bitwidth
+        @b = Signal$ bitwidth
+
+        # derived params
+        @front_x, @sync_x, @back_x, @front_y, @sync_y, @back_y = if
+            (x, y, fps) in VGA_TIMINGS => VGA_TIMINGS!!(x, y, fps)
+            otherwise                  => run_gtf x y fps
+        @total_x  = @front_x + @sync_x + @back_x + @active_x
+        @total_y  = @front_y + @sync_y + @back_y + @active_y
+        @pix_freq = @total_x * @total_y * fps
+
+    timings = ~>
+        "\n".join$ list'
+            ("total_x  = " + (str @total_x ) |>.ljust 25) + " total_y  = " + (str @total_y )
+            ("front_x  = " + (str @front_x ) |>.ljust 25) + " front_y  = " + (str @front_y )
+            ("sync_x   = " + (str @sync_x  ) |>.ljust 25) + " sync_y   = " + (str @sync_y  )
+            ("back_x   = " + (str @back_x  ) |>.ljust 25) + " back_y   = " + (str @back_y  )
+            ("active_x = " + (str @active_x) |>.ljust 25) + " active_y = " + (str @active_y)
+            ("pix_freq = " + (str @pix_freq))
+
+    elaborate = platform ~> m where with m = Module! =>
+        @out = platform.request *: @resource
+
+        # pass along the color data
+        Sync$ @out.r :== @r
+        Sync$ @out.g :== @g
+        Sync$ @out.b :== @b
+
+        # position counters
+        counter_x = Signal$ range @total_x
+        counter_y = Signal$ range @total_y
+        Sync$ counter_x :== counter_x + 1
+        When (counter_x == @total_x - 1) $ ->
+            Sync$ counter_x :== 0
+            Sync$ counter_y :== counter_y + 1
+            When (counter_y == @total_y - 1) $ ->
+                Sync$ counter_y :== 0
+
+        # drive vga syncs, data enable and user outputs
+        Comb$ @pixel_x :== counter_x
+        Comb$ @pixel_y :== counter_y
+        Sync$ @out.hs :== (&)
+            @active_x + @front_x <= counter_x
+            counter_x < @active_x + @front_x + @sync_x
+        Sync$ @out.vs :== (&)
+            @active_y + @front_y <= counter_y
+            counter_y < @active_y + @front_y + @sync_y
+        Sync$ @out.de :== (&)
+            counter_x < @active_x
+            counter_y < @active_y
+
+        Comb$ @out.ck :== ClockSignal "sync"
+
+
+
+
+VgaController3 = bind VgaController
+    resource_name: "vga_3bit"
+    bitwidth: 1
+
+VgaController12 = bind VgaController
+    resource_name: "vga_12bit"
+    bitwidth: 4
+
+DviController3 = bind VgaController
+    resource_name: "dvi_3bit"
+    bitwidth: 1
+
+DviController12 = bind VgaController
+    resource_name: "dvi_12bit"
+    bitwidth: 4
+
+
+
+if __name__ == "__main__" =>
+    plat = ICEBreakerPlatform! # TODO: does there exist any mock platform?
+    plat.add_resources$ pmod.dvi_12bit 0
+    #design = DviController12 800 480 45
+    design = DviController12 800 600 60
+
+    main design plat ports:
+        list'
+            design.pixel_x
+            design.pixel_y
+            design.ack
+            design.r
+            design.g
+            design.b
