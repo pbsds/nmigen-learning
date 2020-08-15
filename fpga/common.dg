@@ -1,0 +1,13 @@
+import "/nmigen_dg/*"
+
+# result = pipeline 5
+#     bind (+) 1
+#     bind (-) 5
+pipeline = data *: funcs -> data where
+    for func in funcs =>
+        data = func data
+
+# cast to signed, extending the signal by one bit
+to_signed = signal -> out where
+    out = Signal$ signed (signal.width + 1)
+    Comb$ out :== signal
