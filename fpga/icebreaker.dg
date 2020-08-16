@@ -18,17 +18,17 @@ Top = subclass Elaboratable where
         pulser  = (Submodule.pulser $ Pulser$  freq // 2).out
         seg7    = Submodule.seg7$ Segment7x2 decimal: False
 
-        Comb$ @ledr :== blinker
+        Comb$ @ledr ::= blinker
 
         ff = Signal 1 reset: 1
         When pulser $ ->
-            Sync$ ff :== ~ff
+            Sync$ ff ::= ~ff
 
-        Comb$ @ledg :== ff
+        Comb$ @ledg ::= ff
 
         counter = Signal 4
         When pulser $ ->
-            Sync$ counter :== counter + 1
+            Sync$ counter ::= counter + 1
 
         # TODO: learn SPI FLASH
         mem = Memory
@@ -36,13 +36,13 @@ Top = subclass Elaboratable where
             depth: 16 # ew
             init: ([0xde, 0xad, 0xbe, 0xef]*4)
         rdport = Submodule.rdport$ mem.read_port!
-        Comb$ rdport.addr :== counter
+        Comb$ rdport.addr ::= counter
 
 
 
-        Comb$ seg7.number  :== rdport.data
-        #Comb$ seg7.number  :== counter
-        Comb$ @seg7        :== Cat seg7.segs seg7.select
+        Comb$ seg7.number  ::= rdport.data
+        #Comb$ seg7.number  ::= counter
+        Comb$ @seg7        ::= Cat seg7.segs seg7.select
 
 
 
@@ -57,20 +57,20 @@ Top = subclass Elaboratable where
         @btn_l = platform.request "button" 3
 
         state = Signal 4 reset: 0b1000
-        Comb$ @leds :== state
-        Comb$ @ledm :== (@btn_r | @btn_l)
+        Comb$ @leds ::= state
+        Comb$ @ledm ::= (@btn_r | @btn_l)
 
         When (on_rising_edge @btn_l) $ ->
-            Sync$ state :== state.rotate_left 1
+            Sync$ state ::= state.rotate_left 1
         When (on_rising_edge @btn_r) $ ->
-            Sync$ state :== state.rotate_right 1
+            Sync$ state ::= state.rotate_right 1
         When (on_rising_edge @btn_m) $ ->
-            Sync$ state :== ~state
+            Sync$ state ::= ~state
 
 
 on_rising_edge = signal -> result where
     prev = Signal (signal.shape!)
-    Sync$ prev :== signal
+    Sync$ prev ::= signal
     result = ~ signal.implies prev
 
 

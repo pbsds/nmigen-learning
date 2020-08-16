@@ -10,4 +10,4 @@ pipeline = data *: funcs -> data where
 # cast to signed, extending the signal by one bit
 to_signed = signal -> out where
     out = Signal$ signed (signal.width + 1)
-    Comb$ out :== signal
+    Comb$ out ::= signal

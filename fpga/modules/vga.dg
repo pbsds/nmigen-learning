@@ -119,34 +119,34 @@ VgaController = subclass Elaboratable where
         @out = platform.request *: @resource
 
         # pass along the color data
-        Sync$ @out.r :== @r
-        Sync$ @out.g :== @g
-        Sync$ @out.b :== @b
+        Sync$ @out.r ::= @r
+        Sync$ @out.g ::= @g
+        Sync$ @out.b ::= @b
 
         # position counters
         counter_x = Signal$ range @total_x
         counter_y = Signal$ range @total_y
-        Sync$ counter_x :== counter_x + 1
+        Sync$ counter_x ::= counter_x + 1
         When (counter_x == @total_x - 1) $ ->
-            Sync$ counter_x :== 0
-            Sync$ counter_y :== counter_y + 1
+            Sync$ counter_x ::= 0
+            Sync$ counter_y ::= counter_y + 1
             When (counter_y == @total_y - 1) $ ->
-                Sync$ counter_y :== 0
+                Sync$ counter_y ::= 0
 
         # drive vga syncs, data enable and user outputs
-        Comb$ @pixel_x :== counter_x
-        Comb$ @pixel_y :== counter_y
-        Sync$ @out.hs :== (&)
+        Comb$ @pixel_x ::= counter_x
+        Comb$ @pixel_y ::= counter_y
+        Sync$ @out.hs ::= (&)
             @active_x + @front_x <= counter_x
             counter_x < @active_x + @front_x + @sync_x
-        Sync$ @out.vs :== (&)
+        Sync$ @out.vs ::= (&)
             @active_y + @front_y <= counter_y
             counter_y < @active_y + @front_y + @sync_y
-        Sync$ @out.de :== (&)
+        Sync$ @out.de ::= (&)
             counter_x < @active_x
             counter_y < @active_y
 
-        Comb$ @out.ck :== ClockSignal "sync"
+        Comb$ @out.ck ::= ClockSignal "sync"
 
 
 

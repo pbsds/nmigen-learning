@@ -8,11 +8,11 @@ Blinker = subclass Elaboratable where
 
     elaborate = platform ~> m where with m = Module! =>
         counter = Signal$ range (@ncycles + 1)
-        Sync$ counter :== counter - 1
+        Sync$ counter ::= counter - 1
 
         When (counter == 0) $ ->
-            Sync$ @out    :== ~ @out
-            Sync$ counter :== @ncycles
+            Sync$ @out    ::= ~ @out
+            Sync$ counter ::= @ncycles
 
 if __name__ == "__main__" =>
     blinker = Blinker ncycles: 10000000
