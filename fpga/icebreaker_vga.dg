@@ -80,27 +80,38 @@ Top = subclass Elaboratable where
             domain: "sync"
 
 
-        # Simple test to see if the PLL works
-        state   = Signal!
-        counter = Signal$ range (int plat.default_clk_frequency)
+        # Feed a picture to the DVI controller
+
+        scroll = Signal 8
+
+        period = int (pll_config.achieved / 60)
+        counter = Signal$ range period
         Sync$ counter :== counter - 1
         When (counter==0) $ ->
-            Sync$ counter :== int plat.default_clk_frequency
-            Sync$ state   :== ~state
-        Comb$ platform.request "led_r" :==  state
-        Comb$ platform.request "led_g" :== ~state
+            Sync$ counter :== int period
+            Sync$ scroll  :== scroll + 1
 
-
-        # Feed a pciture to the DVI controller
         Sync$ dvi.r :== 0x0
         Sync$ dvi.g :== 0x0
         Sync$ dvi.b :== 0x0
         cx = to_signed dvi.pixel_x - (800//2)
         cy = to_signed dvi.pixel_y - (480//2)
-        When (cx*cx + cy*cy < 150**2) $ ->
-            Sync$ dvi.r :== 0xF
-            Sync$ dvi.g :== 0xF
-            Sync$ dvi.b :== 0xF
+        rx = cx*cx
+        ry = cy*cy
+        tx1 = (dvi.pixel_x - scroll) & (1<<5)
+        ty1 = (dvi.pixel_y - scroll) & (1<<5)
+        tx2 = (dvi.pixel_x + scroll) & (1<<6)
+        ty2 = (dvi.pixel_y + scroll + 40) & (1<<6)
+        When
+            rx + ry < 200**2 ,->
+                Sync$ dvi.r :== 0xF
+                #Sync$ dvi.g :== 0xF
+                Sync$ dvi.b :== 0xF
+            tx1 ^ ty1 ,->
+                Sync$ dvi.b :== 0xF
+            tx2 ^ ty2 ,->
+                Sync$ dvi.r :== 0xF
+                Sync$ dvi.g :== 0xF
 
 
 if __name__ == "__main__" =>
