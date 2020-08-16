@@ -34,9 +34,9 @@ run_icepll = current target ->
         int$ get_field "DIVR"
         int$ get_field "DIVF"
         int$ get_field "DIVQ"
-        float$ get_field "F_PLLIN"
-        float$ get_field "F_PLLOUT" "(requested)"
-        float$ get_field "F_PLLOUT" "(achieved)"
+        (*) 1e6 $ float $ get_field "F_PLLIN"
+        (*) 1e6 $ float $ get_field "F_PLLOUT" "(requested)"
+        (*) 1e6 $ float $ get_field "F_PLLOUT" "(achieved)"
 
 
 Top = subclass Elaboratable where
