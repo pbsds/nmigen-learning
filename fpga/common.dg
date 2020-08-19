@@ -8,6 +8,13 @@ pipeline = data *: funcs -> data where
         data = func data
 
 # cast to signed, extending the signal by one bit
-to_signed = signal -> out where
-    out = Signal$ signed (signal.width + 1)
-    Comb$ out ::= signal
+to_signed = signal ->
+    Cat signal 0 |>.as_signed!
+
+# only works before any elaboration, assuming ports are defined in __init__
+deduce_ports = elaboratable -> ports where
+    ports = []
+    for name in dir elaboratable =>
+        if not$ name.startswith "_" =>
+            value = getattr elaboratable name
+            value :: Signal => ports.append value
