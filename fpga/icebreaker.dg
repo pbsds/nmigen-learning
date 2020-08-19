@@ -14,7 +14,7 @@ Top = subclass Elaboratable where
         @ledg = platform.request "led_g" 0
         @seg7 = platform.request "seven_seg"
 
-        blinker = (Submodule.blinker$ Blinker$ freq // 3 ).out
+        blinker = (Submodule.blinker$ Blinker$ freq // 3).out
         pulser  = (Submodule.pulser $ Pulser$  freq // 2).out
         seg7    = Submodule.seg7$ Segment7x2 decimal: False
 

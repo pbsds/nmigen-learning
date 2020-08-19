@@ -7,6 +7,24 @@ import "/warnings/warn"
 import "../common/pipeline"
 import "../resources/pmod"
 
+
+# graph shamelessly stolen from gtf.c
+# https://linux.die.net/man/1/gtf
+#
+#     <--------1--------> <--2--> <--3--> <--4-->
+#                                _________
+#    |-------------------|_______|       |_______
+#
+#                        R       SS      SE     FL
+# 1:  'active' - visible image
+# 2:  'front'  - blank before sync (aka front porch)
+# 3:  'sync'   - sync pulse
+# 4:  'back'   - blank after sync  (aka back porch)
+# R:  Resolution
+# SS: Sync Start
+# SE: Sync End
+# FL: Frame Length
+
 # total_x  = front_x + sync_x + back_x + active_x
 # total_y  = front_y + sync_y + back_y + active_x
 # pix_freq = total_x * total_y * fps
@@ -38,7 +56,6 @@ VGA_TIMINGS = dict' # VGA, SVGA, VESA
 # http://martin.hinner.info/vga/timing.html
 
 
-# https://linux.die.net/man/1/gtf
 run_gtf = x y fps ->
     out = subprocess.run ["gtf", str x, str y, str fps, "-x"]
         capture_output: True
@@ -55,31 +72,8 @@ run_gtf = x y fps ->
         bind take 8
         bind map int
 
-    #     <--------1--------> <--2--> <--3--> <--4-->
-    #                                _________
-    #    |-------------------|_______|       |_______
-    #
-    #                        R       SS      SE     FL
-    # 1:  visible image
-    # 2:  blank before sync (aka front porch)
-    # 3:  sync pulse
-    # 4:  blank after sync  (aka back porch)
-    # R:  Resolution
-    # SS: Sync Start
-    # SE: Sync End
-    # FL: Frame Length
-
-    #total_x, active_x, front_x, sync_x, back_x = hfl, hr, hss-hr, hse-hss, hfl-hse
-    #total_y, active_y, front_y, sync_y, back_y = vfl, vr, vss-vr, vse-vss, vfl-vse
-    #print hr hss hse hfl
-    #print vr vss vse vfl
-    #print active_x front_x sync_x back_x total_x sep:"\t"
-    #print active_y front_y sync_y back_y total_x sep:"\t"
-    #return (front_x, sync_x, back_x, front_y, sync_y, back_y)
-
+    # front_x, sync_x, back_x, front_y, sync_y, back_y
     hss-hr, hse-hss, hfl-hse, vss-vr, vse-vss, vfl-vse
-
-
 
 
 VgaController = subclass Elaboratable where
@@ -179,7 +173,7 @@ if __name__ == "__main__" =>
         list'
             design.pixel_x
             design.pixel_y
-            design.ack
+            design.active
             design.r
             design.g
             design.b

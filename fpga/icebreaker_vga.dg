@@ -40,22 +40,21 @@ run_icepll = current target ->
 
 
 Top = subclass Elaboratable where
-    __init__ = x y ~> None where
-        @x = x
-        @y = y
+    __init__ = x y fps ~> None where
+        @x, @y, @fps  = x, y, fps
 
     elaborate = platform ~> m where with m = Module! =>
 
         # Configure DVI controller
-        dvi = Submodule$ DviController12 @x @y fps:60
+        dvi = Submodule.dvi$ DviController12 @x @y @fps
 
-        # setup clock
+        # setup PLL clock
 
         default_clk   = platform.request platform.default_clk dir:"-"
         default_freq  = platform.default_clk_frequency
         default_reset = if
             platform.default_rst  => platform.request platform.default_rst
-            otherwise             => Const 1
+            otherwise             => Const 0
 
         pll_config = run_icepll
             default_freq
@@ -64,10 +63,10 @@ Top = subclass Elaboratable where
         print pll_config
 
         pll_clk, pll_lock  = Signal!, Signal!
-        Submodule.pll$ Instance "SB_PLL40_PAD" # "SB_PLL40_CORE"
-            i_PACKAGEPIN    : default_clk # i_REFERENCECLK
+        Submodule.pll$ Instance "SB_PLL40_PAD" # or "SB_PLL40_CORE"
+            i_PACKAGEPIN    : default_clk      # or i_REFERENCECLK
             i_BYPASS        : (Const 0)
-            i_RESETB        : default_reset
+            i_RESETB        : ~default_reset
             o_LOCK          : pll_lock
             o_PLLOUTGLOBAL  : pll_clk
             p_FEEDBACK_PATH : pll_config.FEEDBACK
@@ -88,7 +87,7 @@ Top = subclass Elaboratable where
 
         scroll = Signal 8
 
-        period = int (pll_config.achieved / 60)
+        period = int$ pll_config.achieved / @fps
         counter = Signal$ range period
         Sync$ counter ::= counter - 1
         When (counter==0) $ ->
@@ -100,8 +99,8 @@ Top = subclass Elaboratable where
         Sync$ dvi.b ::= 0x0
         cx = to_signed dvi.pixel_x - (@x // 2)
         cy = to_signed dvi.pixel_y - (@y // 2)
-        rx = cx*cx
-        ry = cy*cy
+        rx = cx * cx
+        ry = cy * cy
         tx1 = (dvi.pixel_x - scroll     ) & (1<<5)
         ty1 = (dvi.pixel_y - scroll     ) & (1<<5)
         tx2 = (dvi.pixel_x + scroll     ) & (1<<6)
@@ -111,8 +110,10 @@ Top = subclass Elaboratable where
                 Sync$ dvi.r ::= 0xF
                 #Sync$ dvi.g ::= 0xF
                 Sync$ dvi.b ::= 0xF
+
             tx1 ^ ty1 ,->
                 Sync$ dvi.b ::= 0xF
+
             tx2 ^ ty2 ,->
                 Sync$ dvi.r ::= 0xF
                 Sync$ dvi.g ::= 0xF
