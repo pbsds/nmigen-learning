@@ -19,6 +19,7 @@ Top = subclass Elaboratable where
 
         # setup clock
         pll_config = add_domain_from_pll platform dvi.pix_freq
+        print pll_config
 
 
         # Feed a picture to the DVI controller

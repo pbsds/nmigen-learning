@@ -9,7 +9,7 @@ My focus is currently on:
 	* Effortless dependency management
 	* Helper functions for inspection and documentation of the design
 	* Helper functions for targeting multiple FPGA platforms and boards
-	* Creating PRs to other projects with stuff i find here
+	* Creating PRs to other projects with stuff I come across here
 	* Having fun with my FPGA
 
 # Setup
@@ -38,8 +38,8 @@ To reduce the amount of typing:
 
 * Diagrams are nice
 * Documentation generation would be nice
-* A central nmigen-pmod library would be nice
+* A central nmigen-pmod repository would be nice
 * A RISCV toolchain would be nice (make socs, and compile C, C++ or Rust)
-* nextpnr-xray or vtr would be nice
+* nextpnr-prxray or vpr would be nice
 * Batch setup of Vivado would be nice
 * Ability to synth on a host accessible with ssh would be nice

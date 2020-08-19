@@ -4,7 +4,7 @@ import "/nmigen_dg/*"
 import "/subprocess"
 import "../common/pipeline"
 
-run_icepll = current target ->
+run_icepll = current target -> # TODO: use yowasp-nextpnr-ice40 if installed
     current /= 1e6 # Hz -> MHz
     target  /= 1e6 # Hz -> MHz
     out = subprocess.run ["icepll", "-i", str current, "-o", str target]
@@ -44,7 +44,6 @@ add_domain_from_pll = platform target_freq domain:"sync" -> pll_config where
     pll_config = run_icepll
         default_freq
         target_freq
-    print pll_config
 
     pll_clk  = Signal!
     pll_lock = Signal!

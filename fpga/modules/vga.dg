@@ -56,7 +56,7 @@ VGA_TIMINGS = dict' # VGA, SVGA, VESA
 # http://martin.hinner.info/vga/timing.html
 
 
-run_gtf = x y fps ->
+run_gtf = x y fps -> # TODO: pack this dependency with wasmtime?
     out = subprocess.run ["gtf", str x, str y, str fps, "-x"]
         capture_output: True
         check: True
@@ -86,6 +86,8 @@ VgaController = subclass Elaboratable where
         @pixel_x = Signal$ range @active_x
         @pixel_y = Signal$ range @active_y
         @active  = Signal!
+        @hblank_begin = Signal! # pulsed at start of hblank
+        @vblank_begin = Signal! # pulsed at start of vblank
 
         # in
         @r = Signal$ bitwidth
@@ -113,9 +115,9 @@ VgaController = subclass Elaboratable where
         @out = platform.request *: @resource
 
         # pass along the color data
-        Sync$ @out.r ::= @r
-        Sync$ @out.g ::= @g
-        Sync$ @out.b ::= @b
+        Comb$ @out.r ::= @r
+        Comb$ @out.g ::= @g
+        Comb$ @out.b ::= @b
 
         # position counters
         counter_x = Signal$ range @total_x
@@ -126,6 +128,9 @@ VgaController = subclass Elaboratable where
             Sync$ counter_y ::= counter_y + 1
             When (counter_y == @total_y - 1) $ ->
                 Sync$ counter_y ::= 0
+
+        Sync$ @hblank_begin ::= ((counter_x == @active_x))
+        Sync$ @vblank_begin ::= ((counter_x == @active_x) & (counter_y == @active_y - 1))
 
         # drive vga syncs, data enable and user outputs
         Comb$ @pixel_x ::= counter_x
