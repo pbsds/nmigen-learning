@@ -1,0 +1,68 @@
+import "/collections/namedtuple"
+import "/nmigen/lib/cdc/ResetSynchronizer"
+import "/nmigen_dg/*"
+import "/subprocess"
+import "../common/pipeline"
+
+run_icepll = current target ->
+    current /= 1e6 # Hz -> MHz
+    target  /= 1e6 # Hz -> MHz
+    out = subprocess.run ["icepll", "-i", str current, "-o", str target]
+        capture_output: True
+        check: True
+
+    get_field = field substring:None ->
+        pipeline out.stdout.decode!.splitlines!
+            bind filter $ x -> x.startswith field
+            if
+                substring => bind filter $ x -> substring in x
+                otherwise => x -> x # nop
+            head
+            str.split
+            tail
+            head
+
+    (namedtuple "icepll_config" "feedback filter_range divr divf divq given requested achieved")
+        str$ get_field "FEEDBACK"
+        int$ get_field "FILTER_RANGE"
+        int$ get_field "DIVR"
+        int$ get_field "DIVF"
+        int$ get_field "DIVQ"
+        (*) 1e6 $ float $ get_field "F_PLLIN"
+        (*) 1e6 $ float $ get_field "F_PLLOUT" "(requested)"
+        (*) 1e6 $ float $ get_field "F_PLLOUT" "(achieved)"
+
+
+add_domain_from_pll = platform target_freq domain:"sync" -> pll_config where
+
+    default_clk   = platform.request platform.default_clk dir:"-"
+    default_freq  = platform.default_clk_frequency
+    default_reset = if
+        platform.default_rst  => platform.request platform.default_rst
+        otherwise             => Const 0
+
+    pll_config = run_icepll
+        default_freq
+        target_freq
+    print pll_config
+
+    pll_clk  = Signal!
+    pll_lock = Signal!
+    Submodule.pll$ Instance "SB_PLL40_PAD" # or "SB_PLL40_CORE"
+        i_PACKAGEPIN    : default_clk      # or i_REFERENCECLK
+        i_BYPASS        : (Const 0)
+        i_RESETB        : ~default_reset
+        o_LOCK          : pll_lock
+        o_PLLOUTGLOBAL  : pll_clk
+        p_FEEDBACK_PATH : pll_config.feedback
+        p_FILTER_RANGE  : pll_config.filter_range
+        p_DIVR          : pll_config.divr
+        p_DIVF          : pll_config.divf
+        p_DIVQ          : pll_config.divq
+
+    setattr Domains domain (ClockDomain domain)
+    Comb$ ClockSignal domain ::= pll_clk
+
+    Submodule.rs$ ResetSynchronizer
+        ~pll_lock
+        domain: domain
